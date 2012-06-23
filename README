@@ -1,0 +1,29 @@
+ActiveFedora::Finders
+
+A mixin to allow use of dynamic finder methods (a la Rails) with ActiveFedora.  These methods operate against the FCRepo Object Search.
+Allowed fields are the 15 DCES metadata fields, and the FCRepo object properties, ie:
+
+SINGLE_VALUE_FIELDS = [:pid, :cDate, :mDate, :label]
+SYSTEM_FIELDS = SINGLE_VALUE_FIELDS.concat [:ownerId]
+DC_FIELDS = [:contributor, :coverage, :creator, :date, :description, :format,
+             :identifier, :language, :publisher, :relation, :rights, :source,
+             :subject, :title, :type ]
+SUPPORTED_ALTS = [:cdate, :create_date, :mdate, :modified_date, :owner_id]
+
+
+Example:
+
+class MyModel < ActiveFedora::Base
+  include ActiveFedora::Finders
+end
+
+obj = MyModel.find_by_identifier("fedora-system:ContentModel-3.0")
+
+**
+
+Roadmap:
+
+0.1: dynamic finders, bang support
+0.2: support or_create|initialize
+0.3: support _all and _last
+0.4: support scopes
