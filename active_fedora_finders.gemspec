@@ -16,8 +16,8 @@ Gem::Specification.new do |s|
 
   s.add_dependency('active-fedora', '>=4.2.0')
   s.add_dependency('nokogiri')
-  s.add_dependency("activerecord", '>= 3.0.0')
-  s.add_dependency("activesupport", '>= 3.0.0')
+  s.add_dependency("activerecord", '~>3.2.0')
+  s.add_dependency("activesupport", '~>3.2.0')
   s.add_dependency("rubydora", '~>0.5.9')
   s.add_development_dependency("yard")
   s.add_development_dependency("RedCloth") # for RDoc formatting
