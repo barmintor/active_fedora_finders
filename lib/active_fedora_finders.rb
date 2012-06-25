@@ -1,6 +1,7 @@
 require 'active-fedora'
 require 'active_support'
 require 'active_record'
+require 'active_record/errors' # RecordNotFound is not autoloaded, and ActiveRecord::Base not referenced
 module ActiveFedora
   module Finders
     extend ActiveSupport::Concern
@@ -35,16 +36,16 @@ module ActiveFedora
         if args.is_a? String
           return active_fedora_find(args)
         else
-          return find_by_conditions(args)
+          return find_by_conditions(nil, args)
         end
       end
         
       # modeled after ActiveRecord::FinderMethods.find_by_attributes
       def find_by_attributes(match, attribute_names, *args)
         conditions = Hash[attribute_names.map {|a| [a, args[attribute_names.index(a)]]}]
-        result = find_by_conditions(conditions)
+        result = find_by_conditions(match, conditions)
         if match.bang? && result.blank?
-          raise RecordNotFound, "Couldn't find #{self.name} with #{conditions.to_a.collect {|p| p.join(' = ')}.join(', ')}"
+          raise ActiveRecord::RecordNotFound, "Couldn't find #{self.name} with #{conditions.to_a.collect {|p| p.join(' = ')}.join(', ')}"
         else
           yield(result) if block_given?
           result
@@ -53,13 +54,7 @@ module ActiveFedora
     
       def find_by_conditions(match, args)
         parms = args.dup
-        parms[:cDate] = parms.delete(:create_date) if parms[:create_date]
-        parms[:cDate] = parms.delete(:cdate) if parms[:cdate]
-        parms[:mDate] = parms.delete(:modified_date) if parms[:modified_date]
-        parms[:mDate] = parms.delete(:mdate) if parms[:mdate]
-        parms[:ownerId] = parms.delete(:owner_id) if parms[:owner_id]
-        parms[:identifier] = parms.delete(:id) if parms[:id]
-      
+        maxResults = (match.nil? or match.finder == :first) ? 1 : 25 # find_all and find_last not yet supported    
         query = ""
         parms.each { |key, val|
           if SINGLE_VALUE_FIELDS.include? key
@@ -69,21 +64,27 @@ module ActiveFedora
           end
         }
         query.strip!
-        results = ""
+        results = []
         if ActiveFedora.config.sharded?
           (0...ActiveFedora.config.credentials.length).each {|ix|
             ActiveFedora::Base.fedora_connection[ix] ||= ActiveFedora::RubydoraConnection.new(ActiveFedora.config.credentials[ix])
             rubydora = ActiveFedora::Base.fedora_connection[ix].connection
-            results.concat rubydora.find_objects(:query=>query,:pid=>'true')
+            if results.length <= maxResults
+              results.concat process_results(rubydora.find_objects(:query=>query,:pid=>'true', :maxResults=>maxResults))
+            end
           }
         else
           ActiveFedora::Base.fedora_connection[0] ||= ActiveFedora::RubydoraConnection.new(ActiveFedora.config.credentials)
           rubydora = ActiveFedora::Base.fedora_connection[0].connection
-          results = rubydora.find_objects(:query=>query,:pid=>'true')
+          results.concat process_results(rubydora.find_objects(:query=>query,:pid=>'true', :maxResults=>maxResults))
         end
+        return (maxResults == 1) ? results[0] : results
+      end
+      
+      def process_results(results)
         results = Nokogiri::XML.parse(results)
         results = results.xpath('/f:result/f:resultList/f:objectFields/f:pid',{'f'=>"http://www.fedora.info/definitions/1/0/types/"})
-        results.length > 0 ? results.collect { |result| active_fedora_find(result.text) } : active_fedora_find(results[0].text)
+        results.collect { |result| active_fedora_find(result.text) }
       end
       
       # this method is patterned after an analog in ActiveRecord::DynamicMatchers

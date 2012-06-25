@@ -1,0 +1,7 @@
+<result xmlns="http://www.fedora.info/definitions/1/0/types/">
+	<resultList>
+		<objectFields>
+			<pid>fedora-system:ContentModel-3.0</pid>
+		</objectFields>
+	</resultList>
+</result>

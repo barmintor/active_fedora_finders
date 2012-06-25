@@ -17,16 +17,37 @@ describe ActiveFedora::Finders do
     end
     describe "dynamic finder methods" do
       it "should call .find_by_conditions with correct attributes" do
-        TestBase.expects(:find_by_conditions).with(:identifier => FCREPO_ID).returns(TestBase.new)
+        TestBase.expects(:find_by_conditions).with(is_a(ActiveRecord::DynamicFinderMatch), :identifier => FCREPO_ID).returns(TestBase.new)
         TestBase.find_by_identifier(FCREPO_ID)
-        TestBase.expects(:find_by_conditions).with(:cDate => FCREPO_DATE, :identifier => FCREPO_ID).returns(TestBase.new)
+        TestBase.expects(:find_by_conditions).with(is_a(ActiveRecord::DynamicFinderMatch), :cDate => FCREPO_DATE, :identifier => FCREPO_ID).returns(TestBase.new)
         TestBase.find_by_create_date_and_identifier(FCREPO_DATE, FCREPO_ID)
       end
       it "should return an ActiveFedora::Base when there is a single result" do
-        pending "the mock of the rubydora repository object and a dummy response"
+        stubfedora = mock("Fedora")
+        stubfedora.expects(:connection).returns(mock("Connection", :find_objects =>fixture('find_one.xml')))
+        TestBase.expects(:active_fedora_find).with(FCREPO_ID).returns TestBase.new(:pid=>FCREPO_ID)
+        ActiveFedora::Base.fedora_connection = [stubfedora]
+        TestBase.find_by_identifier(FCREPO_ID).should be_a TestBase
       end
       it "should return an array when there are multiple results" do
-        pending "the mock of the rubydora repository object and a dummy response"
+        stubfedora = mock("Fedora")
+        stubfedora.expects(:connection).returns(mock("Connection", :find_objects =>fixture('find_multiple.xml')))
+        ActiveFedora::Base.fedora_connection = [stubfedora]
+        TestBase.expects(:active_fedora_find).with(FCREPO_ID).returns TestBase.new(:pid=>FCREPO_ID)
+        TestBase.expects(:active_fedora_find).with("demo:1").returns TestBase.new(:pid=>"demo:1")
+        TestBase.find_all_by_source("test").should be_a Array
+      end
+      it "should throw an error when no results and a bang" do
+        stubfedora = mock("Fedora")
+        stubfedora.expects(:connection).returns(mock("Connection", :find_objects =>fixture('find_none.xml')))
+        ActiveFedora::Base.fedora_connection = [stubfedora]
+        #ActiveRecord::Base
+        begin
+          TestBase.find_by_identifier!("dummy:1")
+          fail "should not successfully return from bang method with no results"
+        rescue Exception => e
+          e.should be_a ActiveRecord::RecordNotFound
+        end
       end
     end
   end
