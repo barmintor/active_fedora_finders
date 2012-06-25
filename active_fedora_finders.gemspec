@@ -29,7 +29,7 @@ Gem::Specification.new do |s|
   s.test_files    = `git ls-files -- {test,spec}/*`.split("\n")
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.extra_rdoc_files = [
-    "LICENSE",
+    "LICENSE.txt",
     "README.textile"
   ]
   s.require_paths = ["lib"]
