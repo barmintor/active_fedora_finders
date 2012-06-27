@@ -9,12 +9,12 @@ module ActiveFedora
     autoload :Version
 
     SINGLE_VALUE_FIELDS = [:pid, :cDate, :mDate, :label]
-    SYSTEM_FIELDS = SINGLE_VALUE_FIELDS.concat [:ownerId]
+    SYSTEM_FIELDS = [:ownerId].concat(SINGLE_VALUE_FIELDS)
     DC_FIELDS = [:contributor, :coverage, :creator, :date, :description, :format,
                  :identifier, :language, :publisher, :relation, :rights, :source,
                  :subject, :title, :type ]
     SUPPORTED_ALTS = [:cdate, :create_date, :mdate, :modified_date, :owner_id]
-    ALL_FIELDS = SYSTEM_FIELDS.concat(DC_FIELDS)
+    ALL_FIELDS = [].concat(SYSTEM_FIELDS).concat(DC_FIELDS)
     FIELD_KEYS = begin
       fk = Hash[ALL_FIELDS.map {|a| [a.to_s, a]}]
       fk["cdate"] = :cDate
@@ -25,25 +25,12 @@ module ActiveFedora
       fk
     end
 
-    included do
-      class << self
-        alias_method :active_fedora_find, :find
-      end
-    end
-
     module ClassMethods    
-      def find(args)
-        if args.is_a? String
-          return active_fedora_find(args)
-        else
-          return find_by_conditions(nil, args)
-        end
-      end
         
       # modeled after ActiveRecord::FinderMethods.find_by_attributes
       def find_by_attributes(match, attribute_names, *args)
         conditions = Hash[attribute_names.map {|a| [a, args[attribute_names.index(a)]]}]
-        result = find_by_conditions(match, conditions)
+        result = fcrepo_find(match, conditions)
         if match.bang? && result.blank?
           raise ActiveRecord::RecordNotFound, "Couldn't find #{self.name} with #{conditions.to_a.collect {|p| p.join(' = ')}.join(', ')}"
         else
@@ -52,7 +39,7 @@ module ActiveFedora
         end
       end
     
-      def find_by_conditions(match, args)
+      def fcrepo_find(match, args)
         parms = args.dup
         maxResults = (match.nil? or match.finder == :first) ? 1 : 25 # find_all and find_last not yet supported    
         query = ""
@@ -84,20 +71,24 @@ module ActiveFedora
       def process_results(results)
         results = Nokogiri::XML.parse(results)
         results = results.xpath('/f:result/f:resultList/f:objectFields/f:pid',{'f'=>"http://www.fedora.info/definitions/1/0/types/"})
-        results.collect { |result| active_fedora_find(result.text) }
+        results.collect { |result| find_one(result.text) }
       end
       
       # this method is patterned after an analog in ActiveRecord::DynamicMatchers
       def all_attributes_exists?(attribute_names)
+        attribute_names.reduce(true) {|result, att| ALL_FIELDS.include? att or SUPPORTED_ALTS.include? att}
+      end
+      
+      def normalize_attribute_names!(attribute_names)
         field_keys = attribute_names.map {|val| FIELD_KEYS[val] or val}
         attribute_names.replace field_keys
-        attribute_names.reduce(true) {|result, att| ALL_FIELDS.include? att or SUPPORTED_ALTS.include? att}
       end
       
       # adapted from ActiveRecord::DynamicMatchers
       def method_missing(method_id, *arguments, &block)
         if match = (ActiveRecord::DynamicFinderMatch.match(method_id) || ActiveRecord::DynamicScopeMatch.match(method_id))
           attribute_names = match.attribute_names
+          normalize_attribute_names!(attribute_names)
           super unless all_attributes_exists?(attribute_names)
           if !(match.is_a?(ActiveRecord::DynamicFinderMatch) && match.instantiator? && arguments.first.is_a?(Hash)) && arguments.size < attribute_names.size
             method_trace = "#{__FILE__}:#{__LINE__}:in `#{method_id}'"
