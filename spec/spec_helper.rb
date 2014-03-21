@@ -1,4 +1,5 @@
 ENV["environment"] ||= 'test'
+require "rubygems"
 require "bundler/setup"
 
 if ENV['COVERAGE'] and RUBY_VERSION =~ /^1.9/
@@ -9,8 +10,6 @@ if ENV['COVERAGE'] and RUBY_VERSION =~ /^1.9/
   SimpleCov.start
 end
 
-require 'active_record'
-#require 'active_record/errors'
 require 'active-fedora'
 require 'rspec'
 

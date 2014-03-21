@@ -14,11 +14,9 @@ Gem::Specification.new do |s|
 
   s.rubygems_version = %q{1.3.7}
 
-  s.add_dependency('active-fedora', '>=4.2.0')
+  s.add_dependency('active-fedora', '>=6.7.0')
+  s.add_dependency('activerecord')
   s.add_dependency('nokogiri')
-  s.add_dependency("activerecord", '~>3.2.0')
-  s.add_dependency("activesupport", '~>3.2.0')
-  s.add_dependency("rubydora", '<2.0')
   s.add_development_dependency("yard")
   s.add_development_dependency("RedCloth") # for RDoc formatting
   s.add_development_dependency("rake")
