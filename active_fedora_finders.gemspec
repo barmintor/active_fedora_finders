@@ -9,12 +9,12 @@ Gem::Specification.new do |s|
   s.authors     = ["Benjamin Armintor"]
   s.email       = ["armintor@gmail.com"]
   s.homepage    = %q{https://github.com/barmintor/active_fedora_finders}
-  s.summary     = %q{A library for adding ActiveRecord-style dynamic finders to ActiveFedora::Base subclasses.}
-  s.description = %q{A mixin library for ActiveFedora. Generates dynamic finder methods operating against the FCRepo object search terms (DCES elements and object properties).}
+  s.summary     = %q{A library for adding ActiveRecord-style relations to ActiveFedora::Base subclasses.}
+  s.description = %q{A mixin library for ActiveFedora. Realtion methods operating against the FCRepo object search terms (DCES elements and object properties).}
 
   s.rubygems_version = %q{1.3.7}
 
-  s.add_dependency('active-fedora', '>=6.7.0')
+  s.add_dependency('active-fedora', '>=7.0.0')
   s.add_dependency('activerecord')
   s.add_dependency('nokogiri')
   s.add_development_dependency("yard")

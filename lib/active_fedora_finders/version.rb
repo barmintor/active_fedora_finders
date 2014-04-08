@@ -1,5 +1,5 @@
 module ActiveFedora
-  module Finders
-    VERSION = '0.4.0'
+	module Finders
+      VERSION = '0.5.0'
   end
 end

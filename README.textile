@@ -14,16 +14,20 @@ SUPPORTED_ALTS = [:cdate, :create_date, :mdate, :modified_date, :owner_id]
 Example:
 
 class MyModel < ActiveFedora::Base
-  include ActiveFedora::Finders
+  include ActiveFedora::RepositoryQuerying
 end
 
-obj = MyModel.find_by_identifier("fedora-system:ContentModel-3.0")
+obj = MyModel.search_repo(pid: "fedora-system:ContentModel-3.0").first!
 
 **
 
 Roadmap:
 
 0.1: dynamic finders, bang support
-0.2: support or_create|initialize
-0.3: support _all and _last
-0.4: support scopes
+0.2 rubydora 1.x
+0.3: Rubydora 1.0...2.0
+0.4: AF 6.7+
+0.5: Rails 4 and Hydra 7
+0.6: support or_create|initialize
+0.7: support _all and _last
+0.8: support scopes
